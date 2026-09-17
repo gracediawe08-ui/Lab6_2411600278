@@ -1,0 +1,126 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Product;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class DashboardController extends Controller
+{
+    public function index()
+    {
+        $totalProducts = Product::count();
+
+        $lowStock = Product::whereColumn(
+            'quantity',
+            '<=',
+            'reorder_level'
+        )
+        ->where('quantity', '>', 0)
+        ->count();
+
+        $outOfStock = Product::where(
+            'quantity',
+            0
+        )->count();
+
+        $inventoryValue = Product::selectRaw(
+            'SUM(quantity * unit_price) as total'
+        )->value('total') ?? 0;
+
+        
+        $products = Product::latest()->get();
+
+        
+        $recentProducts = Product::latest()
+            ->take(5)
+            ->get();
+
+        
+        $lowStockProducts = Product::whereColumn(
+            'quantity',
+            '<=',
+            'reorder_level'
+        )
+        ->where('quantity', '>', 0)
+        ->orderBy('quantity')
+        ->get();
+
+       
+        $categoryData = Product::select(
+            'category',
+            DB::raw('SUM(quantity) as total_quantity'),
+            DB::raw('SUM(quantity * unit_price) as total_value')
+        )
+        ->groupBy('category')
+        ->orderBy('category')
+        ->get();
+
+        
+        $inStockCount = Product::whereColumn(
+            'quantity',
+            '>',
+            'reorder_level'
+        )->count();
+
+        return view('dashboard', compact(
+            'totalProducts',
+            'lowStock',
+            'outOfStock',
+            'inventoryValue',
+            'products',
+            'recentProducts',
+            'lowStockProducts',
+            'categoryData',
+            'inStockCount'
+        ));
+    }
+
+    public function search(Request $request)
+    {
+        $search = trim($request->input('search', ''));
+        $category = $request->input('category', '');
+        $status = $request->input('status', '');
+
+        $query = Product::query();
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('sku', 'like', '%' . $search . '%');
+            });
+        }
+
+        if ($category !== '') {
+            $query->where('category', $category);
+        }
+
+        if ($status === 'in_stock') {
+            $query->whereColumn(
+                'quantity',
+                '>',
+                'reorder_level'
+            );
+        }
+
+        if ($status === 'low_stock') {
+            $query->whereColumn(
+                'quantity',
+                '<=',
+                'reorder_level'
+            )
+            ->where('quantity', '>', 0);
+        }
+
+        if ($status === 'out_of_stock') {
+            $query->where('quantity', 0);
+        }
+
+        $products = $query
+            ->latest()
+            ->get();
+
+        return response()->json($products);
+    }
+}
