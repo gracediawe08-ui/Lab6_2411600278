@@ -708,21 +708,26 @@
 
                     </div>
 
-                    <div class="form-group">
+                    
+<div class="form-group">
+    <label for="supplier">Supplier</label>
 
-                        <label for="supplier">
-                            Supplier
-                        </label>
+    <select name="supplier" id="supplier">
+        <option value="">Select Supplier</option>
+        <option value="ABC Hardware Supply">ABC Hardware Supply</option>
+        <option value="Prime Lumber Trading">Prime Lumber Trading</option>
+        <option value="Color House Supplies">Color House Supplies</option>
+        <option value="ABC Plumbing Center">ABC Plumbing Center</option>
+        <option value="BuildRight Supplies">BuildRight Supplies</option>
+    </select>
 
+    @error('supplier')
+        <div class="field-error">
+            {{ $message }}
+        </div>
+    @enderror
+</div>
 
-                        <input
-                            type="text"
-                            id="supplier"
-                            name="supplier"
-                            value="{{ old('supplier') }}"
-                            placeholder="Example: ABC Hardware Supply"
-                            class="@error('supplier') input-error @enderror"
-                        >
 
 
                         @error('supplier')

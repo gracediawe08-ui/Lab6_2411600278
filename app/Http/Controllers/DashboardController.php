@@ -77,6 +77,42 @@ class DashboardController extends Controller
         ));
     }
 
+   
+
+public function refresh()
+{
+    $totalProducts = Product::count();
+
+    $totalStockQuantity = Product::sum('quantity');
+
+    $lowStock = Product::lowStock()
+        ->where('quantity', '>', 0)
+        ->count();
+
+    $outOfStock = Product::outOfStock()->count();
+
+    $inStockCount = Product::whereColumn(
+        'quantity',
+        '>',
+        'reorder_level'
+    )->count();
+
+    $inventoryValue = Product::selectRaw(
+        'COALESCE(SUM(quantity * unit_price), 0) as total'
+    )->value('total');
+
+    return response()->json([
+        'totalProducts' => $totalProducts,
+        'totalStockQuantity' => (int) $totalStockQuantity,
+        'lowStock' => $lowStock,
+        'outOfStock' => $outOfStock,
+        'inStockCount' => $inStockCount,
+        'inventoryValue' => (float) $inventoryValue,
+        'updatedAt' => now()->toDateTimeString(),
+    ]);
+}
+
+
     public function search(Request $request)
     {
         $search = trim($request->input('search', ''));

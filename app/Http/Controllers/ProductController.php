@@ -5,22 +5,34 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Models\Supplier;
 
 class ProductController extends Controller
 {
     
-    public function index()
-    {
-        $products = Product::latest()->get();
+   
+public function index(\Illuminate\Http\Request $request)
+{
+    $query = Product::query();
 
-        return view('products.index', compact('products'));
+    if ($request->query('filter') === 'low-stock') {
+        $query->whereColumn('quantity', '<=', 'reorder_level')
+              ->where('quantity', '>', 0);
     }
+
+    $products = $query->latest()->get();
+
+    return view('products.index', compact('products'));
+}
+
 
     
     public function create()
-    {
-        return view('products.create');
-    }
+{
+    $suppliers = Supplier::all();
+
+    return view('products.create', compact('suppliers'));
+}
 
     
     public function store(Request $request)

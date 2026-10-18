@@ -263,17 +263,7 @@ display: block;
         <div class="login-card">
 
             <div class="login-brand">
-
-                <div class="brand-icon">
-                <img
-                  src="{{ asset('assets/logo.png') }}"
-                  alt="Hardware Inventory System Logo"
-                  class="login-logo"
-                >
-                </div>
-
-
-
+ 
                 <h1 class="login-title">
                     Hardware Inventory System
                 </h1>
@@ -359,25 +349,6 @@ display: block;
                     @endif
 
                 </div>
-
-
-                <div class="remember-row">
-
-                    <label class="remember-label">
-
-                        <input
-                            id="remember_me"
-                            type="checkbox"
-                            class="remember-checkbox"
-                            name="remember"
-                        >
-
-                        <span>
-                            Remember me
-                        </span>
-
-                    </label>
-
 
                     @if (Route::has('password.request'))
 

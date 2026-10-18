@@ -13,19 +13,28 @@ return new class extends Migration
 
             $table->foreignId('product_id')
                 ->constrained('products')
-                ->onDelete('cascade');
-
-            $table->enum('transaction_type', ['stock_in', 'stock_out']);
-
-            $table->integer('quantity');
-
-            $table->string('reference_document')->nullable();
+                ->restrictOnDelete();
 
             $table->foreignId('user_id')
                 ->constrained('users')
-                ->onDelete('cascade');
+                ->restrictOnDelete();
+
+            $table->enum('transaction_type', [
+                'stock_in',
+                'stock_out',
+                'adjustment',
+            ]);
+
+            $table->unsignedInteger('quantity');
+
+            $table->string('reference_document')->nullable();
+
+            $table->text('notes')->nullable();
 
             $table->timestamps();
+
+            $table->index(['transaction_type', 'created_at']);
+            $table->index(['product_id', 'created_at']);
         });
     }
 

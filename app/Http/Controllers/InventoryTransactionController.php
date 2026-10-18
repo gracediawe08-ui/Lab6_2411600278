@@ -7,6 +7,7 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class InventoryTransactionController extends Controller
 {
@@ -33,42 +34,42 @@ class InventoryTransactionController extends Controller
             'transaction_type' => 'required|in:stock_in,stock_out',
             'quantity' => 'required|integer|min:1',
             'reference_document' => 'nullable|string|max:255',
+            'notes' => 'nullable|string|max:1000',
         ]);
 
         DB::transaction(function () use ($validated) {
+            $product = Product::whereKey($validated['product_id'])
+                ->lockForUpdate()
+                ->firstOrFail();
 
-            $product = Product::lockForUpdate()
-                ->findOrFail($validated['product_id']);
+            $quantity = (int) $validated['quantity'];
 
             if (
-                $validated['transaction_type'] === 'stock_out' &&
-                $validated['quantity'] > $product->quantity
+                $validated['transaction_type'] === 'stock_out'
+                && $product->quantity < $quantity
             ) {
-                abort(
-                    422,
-                    'Stock out quantity cannot be greater than the available stock.'
-                );
+                throw ValidationException::withMessages([
+                    'quantity' => 'Insufficient stock. Available quantity: '
+                        . $product->quantity . '.',
+                ]);
             }
-
-            if ($validated['transaction_type'] === 'stock_in') {
-                $product->quantity += $validated['quantity'];
-            } else {
-                $product->quantity -= $validated['quantity'];
-            }
-
-            $product->save();
 
             InventoryTransaction::create([
                 'product_id' => $product->id,
                 'transaction_type' => $validated['transaction_type'],
-                'quantity' => $validated['quantity'],
-                'reference_document' => $validated['reference_document'] ?? null,
+                'quantity' => $quantity,
+                'reference_document' =>
+                    $validated['reference_document'] ?? null,
+                'notes' => $validated['notes'] ?? null,
                 'user_id' => Auth::id(),
             ]);
         });
 
         return redirect()
             ->route('inventory.index')
-            ->with('success', 'Inventory transaction recorded successfully!');
+            ->with(
+                'success',
+                'Inventory transaction recorded successfully!'
+            );
     }
 }
